@@ -1,0 +1,356 @@
+/* Blackjack - house-ui graphite palette, light + dark.
+   Colour lives in the cards, the chips and the outcomes; the chrome stays neutral. */
+:root{
+  color-scheme:light;
+  --bg:#F5F5F6; --card:#FFFFFF; --ink:#17191B; --ink-rgb:23,25,27;
+  --accent:#3B565B; --accent-soft:#C2CDCE; --on-accent:#FFFFFF;
+  --v-dev-bg:rgba(28,106,85,.12);  --v-dev:#1E7A5E;
+  --v-stop-bg:rgba(196,99,74,.16); --v-stop:#A54B33;
+  --v-low-bg:rgba(var(--ink-rgb),.07); --v-low:rgba(var(--ink-rgb),.62);
+  /* text ON the tinted pills, measured against the tint, not against the page */
+  --res-win:#15604A; --res-lose:#8C3B26; --res-push:rgba(var(--ink-rgb),.74);
+  --tip-bg:rgba(23,25,27,.92); --tip-ink:#F3F4F4;
+  --shadow-float:0 6px 20px rgba(20,22,24,.12);
+  --shadow-card:0 8px 24px rgba(20,22,24,.18);
+  --shadow-sheet:0 -20px 60px rgba(20,22,24,.22);
+  --sub:rgba(var(--ink-rgb),.62); --sub2:rgba(var(--ink-rgb),.46);
+  --line:rgba(var(--ink-rgb),.11); --line-strong:rgba(var(--ink-rgb),.17);
+  --track:rgba(var(--ink-rgb),.08);
+  --knob-bg:#FFFFFF;
+  --scrim:20,22,24; --scrim-a:.42;
+  --sheet-bg:#FFFFFF;
+  /* playing cards */
+  --face:#FFFFFF; --face-ink:#17191B; --face-red:#B8452F;
+  --back:#3B565B; --back-dot:rgba(255,255,255,.22);
+  --felt:rgba(var(--ink-rgb),.035);
+  /* chips: one ordinal ramp, light to dark as the denomination grows */
+  --ch5-b:#C3C9C8;  --ch5-n:#FBFBFB;  --ch5-t:#17191B;
+  --ch25-b:#1C6A55; --ch25-n:#8FCBB9; --ch25-t:#FFFFFF;
+  --ch100-b:#2A3033;--ch100-n:#9FAEB1;--ch100-t:#FFFFFF;
+  --ch500-b:#8A3A28;--ch500-n:#E2A292;--ch500-t:#FFFFFF;
+  --hair:1px; --r-card:14px; --r-sm:9px;
+  --cw:76px; --k:1; --cws:calc(var(--cw) * var(--k));
+  --font:-apple-system,BlinkMacSystemFont,'SF Pro Text','Inter',system-ui,sans-serif;
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1011; --card:#191B1D; --ink:#E9EAEB; --ink-rgb:233,234,235;
+  --accent:#9FBDC0; --accent-soft:#38494C; --on-accent:#0F1011;
+  --v-dev-bg:rgba(79,188,156,.16);  --v-dev:#5CC6A2;
+  --v-stop-bg:rgba(222,124,95,.16); --v-stop:#EC9077;
+  --res-win:#5CC6A2; --res-lose:#EC9077; --res-push:rgba(var(--ink-rgb),.74);
+  --tip-bg:rgba(56,59,62,.94); --tip-ink:#F0F1F1;
+  --shadow-float:0 8px 24px rgba(0,0,0,.45);
+  --shadow-card:0 10px 28px rgba(0,0,0,.55);
+  --shadow-sheet:0 -24px 70px rgba(0,0,0,.6);
+  --knob-bg:#2C3033;
+  --scrim:0,0,0; --scrim-a:.62;
+  --sheet-bg:#212426;
+  --face:#F2F2F3; --face-ink:#17191B; --face-red:#B8452F;
+  --back:#2A3B3E; --back-dot:rgba(233,234,235,.16);
+  --felt:rgba(var(--ink-rgb),.04);
+  --ch5-b:#8E9694;  --ch5-n:#E6E9E8;  --ch5-t:#17191B;
+  --ch25-b:#28806A; --ch25-n:#9BD6C4; --ch25-t:#FFFFFF;
+  --ch100-b:#3A4245;--ch100-n:#AFBCBF;--ch100-t:#FFFFFF;
+  --ch500-b:#A2452F;--ch500-n:#EDB3A3;--ch500-t:#FFFFFF;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--font); font-size:15px; line-height:1.5; letter-spacing:-0.005em;
+  font-variant-numeric:tabular-nums lining-nums;
+  -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent;
+  display:flex; flex-direction:column; height:100dvh;
+  overflow:hidden; user-select:none; -webkit-user-select:none;
+}
+button{font:inherit; color:inherit; background:none; border:0; padding:0; margin:0; cursor:pointer; touch-action:manipulation}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+h1,h2,h3{margin:0; font-weight:600; letter-spacing:-0.016em}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- top bar ---------- */
+.top{
+  display:flex; align-items:center; gap:12px; padding:12px 18px 8px;
+  padding-top:max(12px,env(safe-area-inset-top));
+}
+.top h1{font-size:17px; line-height:1.2}
+.tools{display:flex; align-items:center; gap:4px; margin-left:6px}
+.bank{margin-left:auto; text-align:right; line-height:1.15}
+.bank .lbl{display:block; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--sub); font-weight:500}
+.bank .val{font-size:19px; font-weight:600; letter-spacing:-0.016em; display:inline-block; transform-origin:right center}
+
+.icon{position:relative; width:38px; height:38px; border-radius:99px; display:grid; place-items:center; color:var(--sub)}
+.icon svg{width:17px; height:17px}
+.icon:hover,.icon.pressed{color:var(--ink)}
+#btnSound .cross{opacity:0}
+#btnSound.off .wave{opacity:0}
+#btnSound.off .cross{opacity:1}
+
+.seg{--segw:32px; position:relative; display:flex; background:var(--track); border-radius:99px; padding:2px; height:30px}
+.seg .knob{position:absolute; top:2px; left:2px; height:26px; width:var(--segw); border-radius:99px; background:var(--knob-bg); box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.seg button{position:relative; z-index:1; width:var(--segw); height:26px; border-radius:99px; display:grid; place-items:center; color:var(--sub)}
+.seg button[aria-checked="true"]{color:var(--ink)}
+.seg svg{width:14px;height:14px}
+
+/* ---------- table ---------- */
+.table{
+  position:relative; flex:1; min-height:0; margin:0 12px; border-radius:var(--r-card);
+  background:var(--felt); box-shadow:0 0 0 var(--hair) var(--line);
+  display:grid; grid-template-rows:1fr auto 1fr;
+}
+.dealer,.hands{display:flex; align-items:center; justify-content:center; padding:10px}
+.dealer{flex-direction:column; gap:10px; justify-content:flex-end; padding-bottom:4px}
+.hands{gap:12px; align-items:flex-start; padding-top:4px}
+.dealer .meta{display:flex; align-items:center; gap:8px; height:24px}
+.who{font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:var(--sub)}
+
+.cards{position:relative; border-radius:var(--r-sm)}
+.cards.empty{box-shadow:0 0 0 var(--hair) var(--line-strong); opacity:.55}
+
+.score{
+  min-width:28px; height:24px; padding:0 9px; border-radius:99px; display:none; align-items:center; justify-content:center;
+  background:var(--v-low-bg); color:var(--ink); font-size:13px; font-weight:600;
+}
+.score.on{display:inline-flex}
+.score.soft::after{content:'soft'; margin-left:5px; font-size:10px; font-weight:500; color:var(--sub); letter-spacing:.05em; text-transform:uppercase}
+.score.bust{background:var(--v-stop-bg); color:var(--res-lose)}
+.score.bj{background:var(--v-dev-bg); color:var(--res-win)}
+
+/* one player hand */
+.spot{position:relative; display:flex; flex-direction:column; align-items:center; gap:9px}
+.spot .meta{display:flex; align-items:center; justify-content:center; gap:6px; height:24px}
+.spot .score{transform-origin:center}
+.spot.active .score{box-shadow:0 0 0 2px var(--accent-soft)}
+.spot.active .meta::after{content:''; width:5px; height:5px; border-radius:50%; background:var(--accent)}
+.badge{
+  position:absolute; left:50%; top:34%; z-index:3; transform-origin:center;
+  translate:-50% 0; display:inline-flex; align-items:center; gap:7px; white-space:nowrap;
+  height:28px; padding:0 12px; border-radius:99px; font-size:13px; font-weight:600; opacity:0; pointer-events:none;
+  box-shadow:0 2px 10px rgba(0,0,0,.18);
+}
+.badge .net{font-weight:500}
+.badge.win{background:var(--v-dev-bg); color:var(--res-win)}
+.badge.lose{background:var(--v-stop-bg); color:var(--res-lose)}
+.badge.push{background:var(--v-low-bg); color:var(--res-push)}
+
+/* shoe */
+.shoe{
+  position:absolute; top:12px; right:12px; width:calc(var(--cw)*.5); height:calc(var(--cw)*.7);
+  border-radius:6px; background:var(--back); opacity:calc(.16 + var(--fill,1) * .22);
+  box-shadow:1px 1px 0 var(--back), 2px 2px 0 var(--back), 3px 3px 0 var(--back);
+}
+.shoe .left{position:absolute; inset:auto 0 -19px 0; text-align:center; font-size:10px; color:var(--sub); letter-spacing:.05em}
+
+/* centre strip */
+.mid{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:76px; padding:10px 12px}
+.betspot,.ins{
+  display:inline-flex; align-items:center; gap:9px; height:38px; padding:0 15px 0 9px; border-radius:99px;
+  background:var(--card); box-shadow:0 0 0 var(--hair) var(--line);
+}
+.betspot .lbl,.ins .lbl{font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--sub); font-weight:500}
+.betspot .val,.ins .val{font-size:15px; font-weight:600}
+.betspot.empty{opacity:.55}
+.ins-badge{margin-left:4px; font-size:12px; font-weight:600; padding:2px 9px; border-radius:99px}
+.ins-badge.win{background:var(--v-dev-bg); color:var(--res-win)}
+.ins-badge.lose{background:var(--v-stop-bg); color:var(--res-lose)}
+
+.result{
+  display:inline-flex; align-items:center; gap:10px; height:40px; padding:0 18px; border-radius:99px;
+  font-weight:600; font-size:15px; transform:scale(.82); opacity:0; pointer-events:none;
+}
+.result .net{font-weight:500}
+.result.win{background:var(--v-dev-bg); color:var(--res-win)}
+.result.lose{background:var(--v-stop-bg); color:var(--res-lose)}
+.result.push{background:var(--v-low-bg); color:var(--res-push)}
+.result::before{content:''; width:8px; height:8px; border-radius:50%; background:currentColor}
+
+/* ---------- playing cards ---------- */
+.card{
+  position:absolute; left:0; top:0; z-index:1; width:var(--cws); height:calc(var(--cws)*1.4);
+  perspective:900px; will-change:transform; pointer-events:none;
+}
+.card .in{position:relative; width:100%; height:100%; transform-style:preserve-3d; border-radius:var(--r-sm)}
+.card .f,.card .b{
+  position:absolute; inset:0; border-radius:var(--r-sm); backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  box-shadow:0 0 0 var(--hair) rgba(0,0,0,.14), var(--shadow-card);
+}
+.card .f{background:var(--face); color:var(--face-ink); overflow:hidden}
+.card .f.red{color:var(--face-red)}
+.card .b{
+  transform:rotateY(180deg); background:var(--back);
+  background-image:radial-gradient(var(--back-dot) 1px, rgba(255,255,255,0) 1.2px);
+  background-size:7px 7px; background-position:center;
+}
+.card .b::after{content:''; position:absolute; inset:5px; border-radius:6px; box-shadow:0 0 0 1.5px var(--back-dot)}
+.card .rk{position:absolute; top:6px; left:7px; font-size:calc(var(--cws)*.2); font-weight:600; line-height:1; letter-spacing:-0.02em}
+.card .rk svg{display:block; width:calc(var(--cws)*.13); height:calc(var(--cws)*.13); margin-top:2px}
+.card .rk.rot{top:auto; left:auto; bottom:6px; right:7px; transform:rotate(180deg)}
+.card .pip{position:absolute; inset:0; display:grid; place-items:center}
+.card .pip svg{width:calc(var(--cws)*.4); height:calc(var(--cws)*.4)}
+
+/* ---------- chips ---------- */
+.ch,.chip{
+  --cb:var(--ch25-b); --cn:var(--ch25-n); --ct:var(--ch25-t);
+  position:relative; display:inline-grid; place-items:center;
+  width:var(--chs,26px); height:var(--chs,26px); border-radius:50%; color:var(--ct);
+  background:repeating-conic-gradient(from 9deg, var(--cn) 0 9deg, var(--cb) 9deg 30deg);
+  box-shadow:0 1px 3px rgba(0,0,0,.3), inset 0 0 0 1px rgba(0,0,0,.16);
+}
+.ch::after,.chip::after{
+  content:''; position:absolute; inset:15%; border-radius:50%;
+  background:var(--cb); box-shadow:inset 0 0 0 1.5px var(--cn);
+}
+.ch > span,.chip > span{position:relative; z-index:1; font-weight:600; letter-spacing:-0.01em}
+.c5{--cb:var(--ch5-b); --cn:var(--ch5-n); --ct:var(--ch5-t)}
+.c25{--cb:var(--ch25-b); --cn:var(--ch25-n); --ct:var(--ch25-t)}
+.c100{--cb:var(--ch100-b); --cn:var(--ch100-n); --ct:var(--ch100-t)}
+.c500{--cb:var(--ch500-b); --cn:var(--ch500-n); --ct:var(--ch500-t)}
+
+/* a stack seen from the side: each disc sits a little above the one below */
+.stack{position:relative; display:block; width:26px; height:calc(26px + (var(--n,1) - 1) * 4px); flex:0 0 auto}
+.stack.empty{display:none}
+.stack .ch{position:absolute; left:0; bottom:calc(var(--i) * 4px)}
+.wager{display:flex; align-items:flex-end; gap:7px; margin-top:2px; min-height:26px}
+.wager .amt{font-size:12px; font-weight:600; color:var(--sub); line-height:26px}
+
+/* ---------- controls ---------- */
+.controls{
+  padding:12px 18px; padding-bottom:max(12px,env(safe-area-inset-bottom)); min-height:182px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:11px;
+}
+.row{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap}
+
+.btn{
+  height:48px; min-width:112px; padding:0 20px; border-radius:99px; font-weight:600; font-size:15px;
+  background:var(--card); box-shadow:0 0 0 var(--hair) var(--line-strong); color:var(--ink);
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; position:relative;
+}
+.btn kbd{font:inherit; font-size:11px; font-weight:500; color:var(--sub); padding:1px 5px; border-radius:5px; box-shadow:0 0 0 var(--hair) var(--line)}
+.btn.primary{background:var(--accent); color:var(--on-accent); box-shadow:none}
+.btn.primary kbd{color:inherit; opacity:.8; box-shadow:0 0 0 var(--hair) currentColor}
+.btn.quiet{background:none; box-shadow:none; color:var(--sub); min-width:0; height:40px; padding:0 14px; font-weight:500}
+.btn.danger{color:var(--res-lose)}
+/* the hint is a mark, not a second accent: it must never read as "the button
+   the game wants you to press" the way a filled button does */
+.btn .tip{position:absolute; top:-5px; left:50%; translate:-50% 0; width:6px; height:6px; border-radius:50%; background:var(--accent)}
+#btnHint[aria-pressed="true"]{color:var(--accent)}
+#btnHint[aria-pressed="true"] svg{fill:color-mix(in srgb, var(--accent) 16%, transparent)}
+.btn:disabled{opacity:.38; cursor:default}
+.btn.pressed:not(:disabled),.chip.pressed:not(:disabled){filter:brightness(.93)}
+:root[data-theme="dark"] .btn.pressed:not(:disabled),
+:root[data-theme="dark"] .chip.pressed:not(:disabled){filter:brightness(1.14)}
+
+.chips{gap:12px}
+.chip{--chs:58px; box-shadow:0 2px 6px rgba(0,0,0,.24), inset 0 0 0 1px rgba(0,0,0,.16)}
+.chip > span{font-size:15px}
+.chip:disabled{opacity:.38; cursor:default}
+
+.hint{font-size:12px; color:var(--sub); text-align:center; margin:0}
+
+.fly{position:fixed; left:0; top:0; --chs:26px; pointer-events:none; z-index:60}
+
+.toast{
+  position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translate(-50%,20px); opacity:0;
+  background:var(--tip-bg); color:var(--tip-ink); padding:9px 14px; border-radius:99px; font-size:13px; font-weight:500;
+  pointer-events:none; box-shadow:var(--shadow-float); white-space:nowrap; z-index:70;
+}
+
+/* ---------- sheet ---------- */
+.scrim{position:fixed; inset:0; background:rgba(var(--scrim),var(--scrim-a)); opacity:0; z-index:80}
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:81; transform:translateY(var(--sy,102%));
+  max-height:86dvh; display:flex; flex-direction:column;
+  background:var(--sheet-bg); border-radius:18px 18px 0 0; box-shadow:var(--shadow-sheet);
+}
+.sheet-head{display:flex; align-items:center; gap:12px; padding:16px 18px 10px; flex:0 0 auto; box-shadow:inset 0 -1px 0 var(--line)}
+.sheet-head h2{font-size:17px; margin-right:auto}
+.sheet-body{
+  padding:16px 18px; padding-bottom:max(20px,env(safe-area-inset-bottom));
+  overflow-y:auto; -webkit-overflow-scrolling:touch; user-select:text; -webkit-user-select:text;
+}
+.sheet-body h3{font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--sub); margin:22px 0 8px}
+.sheet-body h3:first-child{margin-top:0}
+.sheet-body p{margin:0 0 10px}
+.sheet-body .lede{font-size:16px; margin-bottom:4px}
+.sheet-body ol,.sheet-body ul{margin:0; padding-left:20px}
+.sheet-body li{margin-bottom:5px}
+.sheet-body kbd{font:inherit; font-size:11px; font-weight:500; color:var(--sub); padding:1px 5px; border-radius:5px; box-shadow:0 0 0 var(--hair) var(--line); margin-left:4px}
+.moves{margin:0; display:grid; grid-template-columns:auto 1fr; gap:7px 14px; align-items:baseline}
+.moves dt{font-weight:600; white-space:nowrap}
+.moves dd{margin:0; color:var(--sub)}
+.pay{width:100%; border-collapse:collapse; font-size:14px}
+.pay th{text-align:left; font-weight:400; padding:8px 0; box-shadow:inset 0 -1px 0 var(--line)}
+.pay td{text-align:right; font-weight:600; padding:8px 0; box-shadow:inset 0 -1px 0 var(--line)}
+.pay tr:last-child th,.pay tr:last-child td{box-shadow:none}
+.fine{font-size:12px; color:var(--sub); margin-top:14px}
+
+/* stats: one block with hairline dividers, never a scatter of little cards */
+.stats{display:grid; grid-template-columns:1fr 1fr; border-radius:var(--r-sm); overflow:hidden; box-shadow:0 0 0 var(--hair) var(--line)}
+.st{display:flex; flex-direction:column; gap:2px; padding:11px 13px; box-shadow:inset 0 0 0 var(--hair) var(--line)}
+.st .k{font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--sub); font-weight:500}
+.st .v{font-size:18px; font-weight:600; letter-spacing:-0.016em}
+.st .v.up{color:var(--res-win)}
+.st .v.down{color:var(--res-lose)}
+#btnResetStats{margin-top:8px}
+
+/* on a phone the theme switch lives here instead of the header, and in exactly
+   one place at a time: the same node is moved, never a second copy */
+.sheet-theme{display:none; align-items:center; gap:12px; margin-bottom:18px}
+.sheet-theme .lbl{font-size:13px; color:var(--sub); font-weight:500}
+.sheet-theme .seg{--segw:44px; height:38px; margin-left:auto}
+.sheet-theme .seg .knob{height:34px}
+.sheet-theme .seg button{height:34px}
+body.narrow .sheet-theme{display:flex}
+
+/* ---------- media blocks: all at the end, nothing after them ---------- */
+@media(min-resolution:1.5dppx){ :root{--hair:0.5px} }
+
+/* on a wide screen the sheet is a centred card, not a strip across the monitor */
+@media(min-width:700px){
+  .sheet{
+    left:50%; right:auto; bottom:24px; width:min(580px, calc(100vw - 48px));
+    transform:translate(-50%, var(--sy,102%));
+    border-radius:18px; max-height:min(80dvh, 780px);
+    box-shadow:0 30px 80px rgba(20,22,24,.28);
+  }
+  :root[data-theme="dark"] .sheet{box-shadow:0 30px 80px rgba(0,0,0,.7)}
+}
+
+@media(max-width:560px){
+  :root{--cw:66px}
+  .top{padding:10px 14px 6px; gap:8px}
+  .tools{gap:6px; margin-left:2px}
+  .tools > .seg{display:none}
+  .icon{width:40px; height:40px}
+  .table{margin:0 9px}
+  .hands{gap:8px}
+  .controls{padding:10px 14px; padding-bottom:max(10px,env(safe-area-inset-bottom)); min-height:170px; gap:10px}
+  .btn{min-width:92px; padding:0 15px; font-size:14px}
+  #uiPlay{display:grid; grid-template-columns:1fr 1fr; gap:9px; width:100%; max-width:330px}
+  #uiPlay .btn{width:100%; min-width:0}
+  .chips{gap:9px}
+  .chip{--chs:54px}
+  .sheet-body{padding-left:15px; padding-right:15px}
+  .sheet{max-height:90dvh}
+}
+@media(max-width:380px){
+  .btn{min-width:78px; padding:0 12px}
+  .chip{--chs:50px}
+  .stats{grid-template-columns:1fr 1fr}
+}
+
+@media(pointer:coarse){
+  .btn kbd,.sheet-body kbd{display:none}
+  /* 44px targets by overlay so the drawing keeps its size; narrowed across the
+     row, since a finger misses along the line rather than across it */
+  .icon::after{content:''; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%)}
+  .seg button::after{content:''; position:absolute; left:50%; top:50%; width:var(--segw); height:44px; transform:translate(-50%,-50%)}
+  .btn.quiet::after{content:''; position:absolute; left:0; right:0; top:50%; height:44px; transform:translateY(-50%)}
+}
+
+@media (prefers-reduced-transparency: reduce){
+  .badge{box-shadow:0 0 0 var(--hair) var(--line-strong), 0 2px 10px rgba(0,0,0,.18)}
+}

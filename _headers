@@ -1,0 +1,20 @@
+# Cloudflare Pages headers.
+# The shell must not be cached hard: nothing here is content-hashed, and a stale
+# index.html or service worker would pin players to an old build.
+/index.html
+  Cache-Control: no-cache
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+/js/*
+  Cache-Control: public, max-age=3600
+/css/*
+  Cache-Control: public, max-age=3600
+/icons/*
+  Cache-Control: public, max-age=604800
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
