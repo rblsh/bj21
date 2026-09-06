@@ -40,6 +40,47 @@ const SUIT_NAME = { S: 'spades', H: 'hearts', D: 'diamonds', C: 'clubs' };
 const RANK_NAME = { A: 'ace', J: 'jack', Q: 'queen', K: 'king' };
 const suitSvg = s => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${SUIT_PATH[s]}" fill="currentColor"/></svg>`;
 
+// A court card used to differ from a number card by one letter in the corner.
+// Each rank now carries a drawn figure: a spiked crown and a beard for the king,
+// a lobed tiara and long hair for the queen, a plumed cap and an open collar for
+// the jack. One figure rather than the mirrored pair a printed deck uses - at a
+// 66px card the mirrored halves are too small to read as anything. It stays
+// inside x 24..85 and y 18..126 of the viewBox, clear of the corner indices.
+const COURT = {
+  K: `<path class="soft" d="M25 126C25 106 34 94 50 94s25 12 25 32Z"/>
+      <path class="stroke" d="M25 126C25 106 34 94 50 94s25 12 25 32"/>
+      <path class="stroke" d="M40 96c2.6 4 5.9 6 10 6s7.4-2 10-6"/>
+      <circle class="head" cx="50" cy="74" r="12.5"/>
+      <path class="beard" d="M40 79.5c1.4 8.2 5.2 12.3 10 12.3s8.6-4.1 10-12.3c-2.9 2.3-6.3 3.5-10 3.5s-7.1-1.2-10-3.5Z"/>
+      <path class="fill" d="M28 62V38l5.5 7.5L39 28l5.5 12L50 18l5.5 22L61 28l5.5 17.5L72 38v24Z"/>
+      <circle class="gem" cx="39" cy="55" r="2.4"/>
+      <circle class="gem" cx="50" cy="55" r="2.4"/>
+      <circle class="gem" cx="61" cy="55" r="2.4"/>`,
+  Q: `<path class="soft" d="M27 126C27 108 35 96 50 96s23 12 23 30Z"/>
+      <path class="stroke" d="M27 126C27 108 35 96 50 96s23 12 23 30"/>
+      <path class="hair" d="M36 66c-6.5 6-8.5 17-6.5 30 1.3 8 3.5 13.5 6.5 18 4-10.5 5-21 4-31.5Z"/>
+      <g transform="translate(100 0) scale(-1 1)"><path class="hair" d="M36 66c-6.5 6-8.5 17-6.5 30 1.3 8 3.5 13.5 6.5 18 4-10.5 5-21 4-31.5Z"/></g>
+      <path class="stroke" d="M41 97c2.4 3.6 5.4 5.4 9 5.4s6.6-1.8 9-5.4"/>
+      <circle class="head" cx="50" cy="74" r="12.5"/>
+      <path class="fill" d="M30 62v-7h40v7Z"/>
+      <circle class="fill" cx="37.5" cy="47" r="7"/>
+      <circle class="fill" cx="50" cy="41" r="8.5"/>
+      <circle class="fill" cx="62.5" cy="47" r="7"/>`,
+  J: `<path class="soft" d="M25 126C25 106 34 94 50 94s25 12 25 32Z"/>
+      <path class="stroke" d="M25 126C25 106 34 94 50 94s25 12 25 32"/>
+      <path class="stroke" d="M41 95 50 106l9-11"/>
+      <circle class="head" cx="50" cy="74" r="12.5"/>
+      <path class="feather" d="M69 56c10-4.5 15.5-12 16.5-21.5-9.5 1-16 6.5-19 14Z"/>
+      <path class="fill" d="M29 62c0-18 9.5-28 21-28s21 10 21 28Z"/>`
+};
+// the suit worn on the chest: what turns a silhouette into a court card
+const emblem = suit => `<g class="emblem" transform="translate(39.5 106) scale(.88)"><path d="${SUIT_PATH[suit]}"/></g>`;
+function faceArt(card) {
+  const figure = COURT[card.rank];
+  if (!figure) return `<div class="pip${card.rank === 'A' ? ' ace' : ''}">${suitSvg(card.suit)}</div>`;
+  return `<div class="court"><svg viewBox="0 0 100 141" aria-hidden="true">${figure}${emblem(card.suit)}</svg></div>`;
+}
+
 class CardView {
   constructor(card, hidden) {
     this.card = card;
@@ -53,7 +94,7 @@ class CardView {
     this.el.innerHTML = `<div class="in">
       <div class="f${red ? ' red' : ''}">
         <div class="rk">${card.rank}${suitSvg(card.suit)}</div>
-        <div class="pip">${suitSvg(card.suit)}</div>
+        ${faceArt(card)}
         <div class="rk rot">${card.rank}${suitSvg(card.suit)}</div>
       </div>
       <div class="b"></div></div>`;
@@ -88,20 +129,43 @@ class CardView {
 }
 
 // ---------- chips ----------
-const CHIP_CLASS = { 5: 'c5', 25: 'c25', 100: 'c100', 500: 'c500' };
-function chipBreak(amount) {
+// The four chips keep their colours and their 1 / 5 / 20 / 100 ratio but their
+// face value climbs with the bankroll: at a billion, betting in fives is not a
+// game. Everything below works on the INDEX of a chip, never on its value.
+const CHIP_CLS = ['c5', 'c25', 'c100', 'c500'];
+const CHIP_BASE = [5, 25, 100, 500];
+let CHIPS = CHIP_BASE.slice();
+
+function chipScale(bank) {
+  let m = 1;
+  while (bank >= 50000 * m && m < 1e24) m *= 10;
+  return m;
+}
+// Largest chips first, and never more than `max` of them. The old version
+// subtracted one chip at a time, so a ten-billion bet meant twenty million
+// iterations and an array to match: that is what froze the tab and then killed it.
+function chipBreak(amount, max = 5) {
   const out = [];
-  for (const d of [500, 100, 25, 5]) while (amount >= d) { out.push(d); amount -= d; }
+  let left = Math.floor(amount);
+  if (!(left > 0)) return out;
+  for (let i = CHIPS.length - 1; i >= 0 && out.length < max; i--) {
+    const d = CHIPS[i];
+    if (left < d) continue;
+    const n = Math.floor(left / d);
+    left -= n * d;
+    for (let k = 0; k < n && out.length < max; k++) out.push(i);
+  }
+  if (!out.length) out.push(0);          // a bet smaller than the smallest chip still shows one
   return out;
 }
-function renderStack(el, amount, max = 7) {
+function renderStack(el, amount, max = 5) {
   el.innerHTML = '';
   el.classList.toggle('empty', !amount);
   if (!amount) return;
-  const chips = chipBreak(amount).reverse().slice(0, max);
-  chips.forEach((d, i) => {
+  const chips = chipBreak(amount, max).reverse();
+  chips.forEach((ci, i) => {
     const c = document.createElement('span');
-    c.className = 'ch ' + CHIP_CLASS[d];
+    c.className = 'ch ' + CHIP_CLS[ci];
     c.style.setProperty('--i', String(i));
     el.appendChild(c);
   });
@@ -134,10 +198,30 @@ const resScale = new Spring(.82, v => { els.result.style.transform = `scale(${v}
 const resAlpha = new Spring(0, v => { els.result.style.opacity = v; }, { response: .3, eps: .005 });
 const dScoreScale = new Spring(1, v => { els.dealerScore.style.transform = `scale(${v})`; }, { response: .26, eps: .002 });
 
-function fmt(n) {
-  const r = Math.round(n * 10) / 10;
-  return r.toLocaleString('en-US', { maximumFractionDigits: 1 });
+// Money grows without limit here, so a plain grouped number stops fitting long
+// before the fun stops. Up to a million it reads in full; past that it takes a
+// suffix, with enough digits that a bet still moves the last one.
+const UNITS = [
+  [1e33, 'Dc'], [1e30, 'No'], [1e27, 'Oc'], [1e24, 'Sp'], [1e21, 'Sx'],
+  [1e18, 'Qi'], [1e15, 'Qa'], [1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']
+];
+function trimZeros(t) { return t.indexOf('.') < 0 ? t : t.replace(/0+$/, '').replace(/\.$/, ''); }
+function compact(a, from) {
+  for (const [v, suf] of UNITS) {
+    if (v < from || a < v) continue;
+    const x = a / v;
+    return trimZeros(x.toFixed(x < 10 ? 3 : x < 100 ? 2 : 1)) + suf;
+  }
+  return trimZeros((Math.round(a * 10) / 10).toFixed(1));
 }
+function fmt(n) {
+  const a = Math.abs(n), sign = n < 0 ? '-' : '';
+  if (!isFinite(a)) return sign + '∞';
+  if (a < 1e6) return sign + (Math.round(a * 10) / 10).toLocaleString('en-US', { maximumFractionDigits: 1 });
+  return sign + compact(a, 1e6);
+}
+// chip faces have a 54px circle to live in: K from a thousand, no grouping
+const chipFace = v => v < 1000 ? String(v) : compact(v, 1e3);
 function signed(n) { return (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n)); }
 function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
 
@@ -211,6 +295,8 @@ function renderStacks() {
   });
 }
 function renderBank(pop = true) {
+  // a fixed half-unit tolerance takes hundreds of frames to cross a billion
+  bankSpring.eps = Math.max(0.5, Math.max(Math.abs(game.bankroll), Math.abs(bankSpring.x)) * 1e-4);
   bankSpring.set(game.bankroll);
   if (pop) { bankScale.jump(1.12); bankScale.set(1); }
 }
@@ -290,7 +376,8 @@ function renderControls() {
   els.betSpot.hidden = p !== 'betting';
 
   if (p === 'betting') {
-    for (const b of els.uiBet.querySelectorAll('.chip')) b.disabled = !game.canBet(+b.dataset.chip);
+    syncChips();
+    for (const b of chipBtns) b.disabled = !game.canBet(+b.dataset.chip);
     els.btnDeal.disabled = !game.canDeal();
     els.btnClear.disabled = game.bet === 0;
     els.btnX2.disabled = !game.canDoubleBet();
@@ -407,9 +494,9 @@ function flyChip(from, to, delay, cls) {
   });
 }
 async function flyChips(from, to, amount) {
-  const chips = chipBreak(amount).slice(0, 6);
+  const chips = chipBreak(amount, 6);
   if (!chips.length) return;
-  await Promise.all(chips.map((d, i) => flyChip(from, to, i * 70, CHIP_CLASS[d])));
+  await Promise.all(chips.map((ci, i) => flyChip(from, to, i * 70, CHIP_CLS[ci])));
 }
 
 function clearTable() {
@@ -534,13 +621,28 @@ async function run(fn) {
   busy = true; renderControls();
   try { await fn(); } finally { busy = false; renderControls(); }
 }
-function addChip(amount, fromEl) {
+function addChip(i, fromEl) {
+  const amount = CHIPS[i];
   if (!game.canBet(amount)) return;
   game.addBet(amount);
   sound.chip();
-  if (fromEl) flyChip(fromEl, els.betSpot, 0, CHIP_CLASS[amount]).then(() => renderBet(true));
+  if (fromEl) flyChip(fromEl, els.betSpot, 0, CHIP_CLS[i]).then(() => renderBet(true));
   else renderBet(true);
   renderControls();
+}
+// the chip row is repainted only when the scale actually moves
+const chipBtns = [...els.uiBet.querySelectorAll('.chip')];
+function syncChips() {
+  const next = CHIP_BASE.map(d => d * chipScale(Math.max(game.bankroll, game.bet, 0)));
+  if (next[0] === CHIPS[0]) return;
+  CHIPS = next;
+  chipBtns.forEach((b, i) => {
+    const face = chipFace(CHIPS[i]);
+    b.dataset.chip = String(CHIPS[i]);
+    b.querySelector('span').textContent = face;
+    b.classList.toggle('long', face.length > 3);
+    b.setAttribute('aria-label', 'Bet ' + fmt(CHIPS[i]));
+  });
 }
 async function doDeal() {
   if (!game.canDeal()) return;
@@ -653,7 +755,7 @@ const HELP_HTML = `
   <li>Dealer stands on every 17, soft 17 included.</li>
   <li>Dealer checks for blackjack under an ace or a ten.</li>
   <li>21 on a split hand counts as 21, not as blackjack.</li>
-  <li>Bankroll starts at 1,000 and is kept in this browser only.</li>
+  <li>Bankroll starts at ${fmt(RULES.startBankroll)} and is kept in this browser only.</li>
 </ul>
 <h3>Worth knowing</h3>
 <p>Always split aces and eights, never split tens or fives. Stand on hard 17 and up. Hit hard 11 and under. Against a dealer showing 2 to 6, stand on 12 to 16 and let the dealer break.</p>
@@ -733,7 +835,7 @@ const openHelp = () => openSheet('How to play', HELP_HTML, mountThemeInSheet);
 // ---------- wiring ----------
 els.uiBet.addEventListener('click', e => {
   const b = e.target.closest('.chip'); if (!b || b.disabled || game.phase !== 'betting') return;
-  addChip(+b.dataset.chip, b);
+  addChip(chipBtns.indexOf(b), b);
 });
 els.btnClear.addEventListener('click', () => { if (game.clearBet()) { sound.click(); renderBet(true); renderControls(); } });
 els.btnX2.addEventListener('click', () => { if (game.doubleBet()) { sound.chips(2); renderBet(true); renderControls(); } });
@@ -865,6 +967,15 @@ renderBet(false); renderControls(); renderShoe();
 // the screenshot pass uses to stack a known shoe. Play money, local storage only.
 window.__bj = { game, views, spots, busy: () => busy };
 
+// The whole game is cached on the first visit, so it plays with no connection at
+// all: dealing, splitting, statistics and the bankroll are local either way.
+// The two notices below are the only thing the network changes.
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  const hadController = !!navigator.serviceWorker.controller;
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) toast('Updated - reopen the game to get the new version', 2600);
+  });
 }
+window.addEventListener('offline', () => toast('Offline - the game plays on', 2200));
+window.addEventListener('online', () => { if (document.visibilityState === 'visible') toast('Back online'); });

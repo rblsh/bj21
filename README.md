@@ -22,11 +22,12 @@ python3 -m http.server 8080
 - Double on any two cards, including after a split
 - Split up to 4 hands on equal card VALUE (K and 10 split), aces get one card each
 - 21 on a split hand is 21, not a blackjack
-- Bankroll of 1,000 with 5 / 25 / 100 / 500 chips, kept in the browser's localStorage
+- Bankroll of 3,000, kept in the browser's localStorage. The four chips start at 5 / 25 / 100 / 500 and their face value climbs with the bankroll, so a billion is still bet in a few taps
 
 ## What the interface does
 
 - Cards deal, flip and re-layout on springs that can be interrupted mid-flight
+- Court cards are drawn, not lettered: a spiked crown and beard for the king, a lobed tiara and long hair for the queen, a plumed cap for the jack, each wearing its suit. The ace keeps a single pip inside a ring
 - Chips are drawn like real ones: edge notches, denominations on a single tonal scale. The bet is a stack, not a number, and chips fly into the bet and back into the bankroll
 - Scores are counted from the cards ON THE TABLE, so the dealer's total grows as cards land instead of appearing final
 - Light and dark themes plus auto; on a phone the switch lives in the sheet, where there is room for it
@@ -36,6 +37,7 @@ python3 -m http.server 8080
 - Basic-strategy hint: the bulb in the header marks the move basic strategy would make with a dot. It is a marker, not a filled button — hit and stand are equals and the game nudges toward neither
 - Keys: Space or Enter to deal and to go to the next hand, H hit, S stand, D double, P split, Y and N for insurance, ? for help, Escape to close a sheet
 - Haptics on a phone at the end of a round (off when the system asks for reduced motion)
+- Money reads in full up to a million and takes a suffix past it: 1.25M, 12.35B, 4.2T and on up to Dc
 
 ## Layout
 
@@ -48,7 +50,7 @@ js/sound.js               WebAudio synthesis
 js/strategy.js            basic strategy: the in-game hint and the same table used in the fairness check
 js/app.js                 UI: dealing, scoring, bets, panels, theme, keys
 test/engine.test.mjs      engine tests: node test/engine.test.mjs
-sw.js                     service worker, network-first shell cache
+sw.js                     service worker, network-first shell cache with a 3s deadline
 manifest.webmanifest      PWA manifest
 icons/                    app icons
 ```

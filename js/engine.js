@@ -36,7 +36,7 @@ export const RULES = {
   maxHands: 4,
   doubleAfterSplit: true,
   splitAcesOneCard: true,
-  startBankroll: 1000,
+  startBankroll: 3000,
   chips: [5, 25, 100, 500],
   minBet: 5
 };

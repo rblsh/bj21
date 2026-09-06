@@ -64,7 +64,13 @@ body{
   -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent;
   display:flex; flex-direction:column; height:100dvh;
   overflow:hidden; user-select:none; -webkit-user-select:none;
+  /* a double tap anywhere used to zoom the page; manipulation drops the
+     300ms double-tap gesture and keeps pinch zoom, which is an accessibility
+     feature. Buttons repeat it because touch-action does not inherit. */
+  touch-action:manipulation; overscroll-behavior:none; -webkit-text-size-adjust:100%;
+  padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
 }
+html{touch-action:manipulation}
 button{font:inherit; color:inherit; background:none; border:0; padding:0; margin:0; cursor:pointer; touch-action:manipulation}
 button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 h1,h2,h3{margin:0; font-weight:600; letter-spacing:-0.016em}
@@ -80,7 +86,9 @@ h1,h2,h3{margin:0; font-weight:600; letter-spacing:-0.016em}
 .tools{display:flex; align-items:center; gap:4px; margin-left:6px}
 .bank{margin-left:auto; text-align:right; line-height:1.15}
 .bank .lbl{display:block; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--sub); font-weight:500}
-.bank .val{font-size:19px; font-weight:600; letter-spacing:-0.016em; display:inline-block; transform-origin:right center}
+.bank .val{font-size:19px; font-weight:600; letter-spacing:-0.016em; display:inline-block; transform-origin:right center; white-space:nowrap}
+.bank{flex:0 0 auto}
+.top h1{flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 
 .icon{position:relative; width:38px; height:38px; border-radius:99px; display:grid; place-items:center; color:var(--sub)}
 .icon svg{width:17px; height:17px}
@@ -190,6 +198,27 @@ h1,h2,h3{margin:0; font-weight:600; letter-spacing:-0.016em}
 .card .rk.rot{top:auto; left:auto; bottom:6px; right:7px; transform:rotate(180deg)}
 .card .pip{position:absolute; inset:0; display:grid; place-items:center}
 .card .pip svg{width:calc(var(--cws)*.4); height:calc(var(--cws)*.4)}
+/* the ace gets the same pip inside a hairline ring: it is the one rank that
+   carries no number and it should not read as a lonely spot */
+.card .pip.ace svg{width:calc(var(--cws)*.3); height:calc(var(--cws)*.3)}
+.card .pip.ace::before{
+  content:''; position:absolute; left:50%; top:50%; width:calc(var(--cws)*.52); height:calc(var(--cws)*.52);
+  transform:translate(-50%,-50%); border-radius:50%; box-shadow:0 0 0 1px currentColor; opacity:.28;
+}
+/* Court cards. A jack used to differ from a nine by one letter in the corner,
+   so J, Q and K get a drawn figure, mirrored top to bottom the way a real deck
+   does it. No frame: the corner indices would collide with one. */
+.card .court{position:absolute; inset:calc(var(--cws)*.2) calc(var(--cws)*.1); pointer-events:none}
+.card .court svg{width:100%; height:100%; display:block; overflow:visible}
+.card .court .fill{fill:currentColor; fill-opacity:.9}
+.card .court .feather{fill:currentColor; fill-opacity:.42}
+.card .court .beard{fill:currentColor; fill-opacity:.78}
+.card .court .soft{fill:currentColor; fill-opacity:.2}
+.card .court .emblem path{fill:currentColor; fill-opacity:.92}
+.card .court .hair{fill:currentColor; fill-opacity:.3}
+.card .court .gem{fill:var(--face)}
+.card .court .head{fill:var(--face); stroke:currentColor; stroke-opacity:.62; stroke-width:2}
+.card .court .stroke{fill:none; stroke:currentColor; stroke-opacity:.5; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round}
 
 /* ---------- chips ---------- */
 .ch,.chip{
@@ -210,9 +239,9 @@ h1,h2,h3{margin:0; font-weight:600; letter-spacing:-0.016em}
 .c500{--cb:var(--ch500-b); --cn:var(--ch500-n); --ct:var(--ch500-t)}
 
 /* a stack seen from the side: each disc sits a little above the one below */
-.stack{position:relative; display:block; width:26px; height:calc(26px + (var(--n,1) - 1) * 4px); flex:0 0 auto}
+.stack{position:relative; display:block; width:26px; height:calc(26px + (var(--n,1) - 1) * 3px); flex:0 0 auto}
 .stack.empty{display:none}
-.stack .ch{position:absolute; left:0; bottom:calc(var(--i) * 4px)}
+.stack .ch{position:absolute; left:0; bottom:calc(var(--i) * 3px)}
 .wager{display:flex; align-items:flex-end; gap:7px; margin-top:2px; min-height:26px}
 .wager .amt{font-size:12px; font-weight:600; color:var(--sub); line-height:26px}
 
@@ -246,6 +275,7 @@ h1,h2,h3{margin:0; font-weight:600; letter-spacing:-0.016em}
 .chips{gap:12px}
 .chip{--chs:58px; box-shadow:0 2px 6px rgba(0,0,0,.24), inset 0 0 0 1px rgba(0,0,0,.16)}
 .chip > span{font-size:15px}
+.chip.long > span{font-size:13px; letter-spacing:-0.03em}
 .chip:disabled{opacity:.38; cursor:default}
 
 .hint{font-size:12px; color:var(--sub); text-align:center; margin:0}
@@ -321,7 +351,10 @@ body.narrow .sheet-theme{display:flex}
 
 @media(max-width:560px){
   :root{--cw:66px}
-  .top{padding:10px 14px 6px; gap:8px}
+  .top{padding:10px 14px 6px; gap:8px; padding-top:max(10px,env(safe-area-inset-top))}
+  /* installed on a phone there is no room for a title next to five controls and
+     a bankroll that can read 1.234B; the heading stays for screen readers */
+  .top h1{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
   .tools{gap:6px; margin-left:2px}
   .tools > .seg{display:none}
   .icon{width:40px; height:40px}

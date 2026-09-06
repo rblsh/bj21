@@ -17,7 +17,7 @@ Every reference in the project is relative (`css/style.css`, `js/app.js`, `start
 git push
 ```
 
-Pages rebuilds in under a minute. **Bump `CACHE` in `sw.js` before every release** (currently `bj21-v3`). The service worker is network-first, so fresh code arrives anyway, but the offline copy only refreshes under a new cache name.
+Pages rebuilds in under a minute. **Bump `CACHE` in `sw.js` before every release** (currently `bj21-v4`). The service worker is network-first, so fresh code arrives anyway, but the offline copy only refreshes under a new cache name.
 
 ## Caching
 
