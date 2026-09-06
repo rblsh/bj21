@@ -67,6 +67,19 @@
 </header>
 
 <main class="table" id="table">
+  <!-- what a real table has printed on the cloth, in the place a real table has
+       it: above the betting circle, curved, and quiet enough to stay furniture -->
+  <svg class="print" viewBox="0 0 400 165" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <defs>
+      <path id="pLine" d="M16 84 Q200 6 384 84"/>
+      <path id="pBig" d="M28 116 Q200 40 372 116"/>
+      <path id="pSmall" d="M72 156 Q200 86 328 156"/>
+    </defs>
+    <use href="#pLine" class="line"/>
+    <text class="big"><textPath href="#pBig" startOffset="50%" text-anchor="middle">BLACKJACK PAYS 3 TO 2</textPath></text>
+    <text class="small"><textPath href="#pSmall" startOffset="50%" text-anchor="middle">INSURANCE PAYS 2 TO 1</textPath></text>
+  </svg>
+
   <div class="shoe" id="shoe" aria-hidden="true"><span class="left num" id="shoeLeft"></span></div>
 
   <section class="dealer" aria-label="Dealer's hand">
@@ -123,7 +136,7 @@
     <button type="button" class="btn primary" id="btnReset">Reset bankroll <kbd>R</kbd></button>
   </div>
 
-  <p class="hint" id="hint">Six decks · dealer stands on soft 17 · blackjack pays 3:2</p>
+  <p class="hint" id="hint">Six decks · dealer stands on soft 17 · double after a split</p>
 </footer>
 
 <div class="toast" id="toast" role="status"></div>

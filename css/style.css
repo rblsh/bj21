@@ -22,7 +22,10 @@
   /* playing cards */
   --face:#FFFFFF; --face-ink:#17191B; --face-red:#B8452F;
   --back:#3B565B; --back-dot:rgba(255,255,255,.22);
-  --felt:rgba(var(--ink-rgb),.035);
+  --felt:rgba(var(--ink-rgb),.045);
+  --felt-lit:rgba(var(--ink-rgb),.016);
+  --felt-print:rgba(var(--ink-rgb),.115);
+  --felt-line:rgba(var(--ink-rgb),.09);
   /* chips: one ordinal ramp, light to dark as the denomination grows */
   --ch5-b:#C3C9C8;  --ch5-n:#FBFBFB;  --ch5-t:#17191B;
   --ch25-b:#1C6A55; --ch25-n:#8FCBB9; --ch25-t:#FFFFFF;
@@ -48,7 +51,10 @@
   --sheet-bg:#212426;
   --face:#F2F2F3; --face-ink:#17191B; --face-red:#B8452F;
   --back:#2A3B3E; --back-dot:rgba(233,234,235,.16);
-  --felt:rgba(var(--ink-rgb),.04);
+  --felt:rgba(var(--ink-rgb),.05);
+  --felt-lit:rgba(var(--ink-rgb),.085);
+  --felt-print:rgba(var(--ink-rgb),.11);
+  --felt-line:rgba(var(--ink-rgb),.09);
   --ch5-b:#8E9694;  --ch5-n:#E6E9E8;  --ch5-t:#17191B;
   --ch25-b:#28806A; --ch25-n:#9BD6C4; --ch25-t:#FFFFFF;
   --ch100-b:#3A4245;--ch100-n:#AFBCBF;--ch100-t:#FFFFFF;
@@ -105,10 +111,28 @@ h1,h2,h3{margin:0; font-weight:600; letter-spacing:-0.016em}
 
 /* ---------- table ---------- */
 .table{
-  position:relative; flex:1; min-height:0; margin:0 12px; border-radius:var(--r-card);
-  background:var(--felt); box-shadow:0 0 0 var(--hair) var(--line);
+  position:relative; flex:1; min-height:0; border-radius:var(--r-card);
+  /* a table, not a band: past about 900px the cloth stops growing and centres,
+     so the felt keeps a table's proportions on a wide screen */
+  width:min(100% - 24px, 900px); margin-inline:auto;
+  /* a little light in the middle of the cloth: two percent of ink is enough to
+     stop the felt reading as a flat rectangle, and not enough to become a colour */
+  background:radial-gradient(120% 80% at 50% 44%, var(--felt-lit) 0%, var(--felt) 66%);
+  box-shadow:0 0 0 var(--hair) var(--line);
   display:grid; grid-template-rows:1fr auto 1fr;
 }
+/* The print on the cloth. It is furniture, not data - the same rules are said in
+   words under the controls and in the help - so it sits well below the contrast
+   a line of text would need, exactly like the print on a real table. */
+.print{
+  position:absolute; left:50%; top:44%; translate:-50% -50%;
+  width:min(84%, 420px); z-index:0; pointer-events:none;
+}
+.print .line{fill:none; stroke:var(--felt-line); stroke-width:1.6}
+.print text{fill:var(--felt-print); font-weight:600; letter-spacing:.14em}
+.print .big{font-size:19px}
+.print .small{font-size:12.5px; letter-spacing:.1em}
+.dealer,.mid,.hands{position:relative; z-index:1}
 .dealer,.hands{display:flex; align-items:center; justify-content:center; padding:10px}
 .dealer{flex-direction:column; gap:10px; justify-content:flex-end; padding-bottom:4px}
 .hands{gap:12px; align-items:flex-start; padding-top:4px}
@@ -140,16 +164,21 @@ h1,h2,h3{margin:0; font-weight:600; letter-spacing:-0.016em}
   box-shadow:0 2px 10px rgba(0,0,0,.18);
 }
 .badge .net{font-weight:500}
-.badge.win{background:var(--v-dev-bg); color:var(--res-win)}
-.badge.lose{background:var(--v-stop-bg); color:var(--res-lose)}
-.badge.push{background:var(--v-low-bg); color:var(--res-push)}
+.badge{background-color:var(--card)}
+.badge.win{background-image:linear-gradient(var(--v-dev-bg),var(--v-dev-bg)); color:var(--res-win)}
+.badge.lose{background-image:linear-gradient(var(--v-stop-bg),var(--v-stop-bg)); color:var(--res-lose)}
+.badge.push{background-image:linear-gradient(var(--v-low-bg),var(--v-low-bg)); color:var(--res-push)}
 
-/* shoe */
+/* shoe: a stack of cards seen from above, so it reads as the deck it is rather
+   than as a grey placeholder block */
 .shoe{
-  position:absolute; top:12px; right:12px; width:calc(var(--cw)*.5); height:calc(var(--cw)*.7);
-  border-radius:6px; background:var(--back); opacity:calc(.16 + var(--fill,1) * .22);
+  position:absolute; top:12px; right:12px; z-index:1; width:calc(var(--cw)*.5); height:calc(var(--cw)*.7);
+  border-radius:6px; background:var(--back); opacity:calc(.34 + var(--fill,1) * .32);
+  background-image:radial-gradient(var(--back-dot) .9px, rgba(255,255,255,0) 1.1px);
+  background-size:6px 6px; background-position:center;
   box-shadow:1px 1px 0 var(--back), 2px 2px 0 var(--back), 3px 3px 0 var(--back);
 }
+.shoe::after{content:''; position:absolute; inset:3px; border-radius:4px; box-shadow:0 0 0 1.2px var(--back-dot)}
 .shoe .left{position:absolute; inset:auto 0 -19px 0; text-align:center; font-size:10px; color:var(--sub); letter-spacing:.05em}
 
 /* centre strip */
@@ -168,11 +197,14 @@ h1,h2,h3{margin:0; font-weight:600; letter-spacing:-0.016em}
 .result{
   display:inline-flex; align-items:center; gap:10px; height:40px; padding:0 18px; border-radius:99px;
   font-weight:600; font-size:15px; transform:scale(.82); opacity:0; pointer-events:none;
+  /* opaque: the outcome sits over the print on the cloth, and a tint alone would
+     let "INSURANCE PAYS 2 TO 1" read straight through the word Push */
+  background-color:var(--card);
 }
 .result .net{font-weight:500}
-.result.win{background:var(--v-dev-bg); color:var(--res-win)}
-.result.lose{background:var(--v-stop-bg); color:var(--res-lose)}
-.result.push{background:var(--v-low-bg); color:var(--res-push)}
+.result.win{background-image:linear-gradient(var(--v-dev-bg),var(--v-dev-bg)); color:var(--res-win)}
+.result.lose{background-image:linear-gradient(var(--v-stop-bg),var(--v-stop-bg)); color:var(--res-lose)}
+.result.push{background-image:linear-gradient(var(--v-low-bg),var(--v-low-bg)); color:var(--res-push)}
 .result::before{content:''; width:8px; height:8px; border-radius:50%; background:currentColor}
 
 /* ---------- playing cards ---------- */
@@ -366,7 +398,7 @@ body.narrow .sheet-theme{display:flex}
   .tools{gap:6px; margin-left:2px}
   .tools > .seg{display:none}
   .icon{width:40px; height:40px}
-  .table{margin:0 9px}
+  .table{width:calc(100% - 18px)}
   .hands{gap:8px}
   .controls{padding:10px 14px; padding-bottom:max(10px,env(safe-area-inset-bottom)); min-height:170px; gap:10px}
   .btn{min-width:92px; padding:0 15px; font-size:14px}
