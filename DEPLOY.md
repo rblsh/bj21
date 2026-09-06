@@ -1,40 +1,34 @@
-# bj21.rblsh.com
+# Deploying
 
-Игра уже в проде: **https://bj21.rblsh.com** (он же https://bj21.pages.dev).
+Live at **https://rblsh.github.io/bj21/** — GitHub Pages, served from branch `main` at the repository root.
 
-## Как это устроено сейчас
+## How it is set up
 
-- Cloudflare Pages, проект `bj21` в аккаунте Rbl@mediacube.io, режим **прямой загрузки** (не из Git)
-- Домен `bj21.rblsh.com` добавлен кастомным доменом, CNAME на `bj21.pages.dev` создан автоматически, зона та же
-- Приложения Cloudflare Access на поддомене нет: игра открывается без входа
-- `_headers` задаёт кэш: `index.html`, `sw.js` и манифест без кэша, `js` и `css` на час, иконки на неделю. Проверено в проде заголовками ответа
-- Локальный git-репозиторий инициализирован, первый коммит на месте, удалёнки нет
+- Repository `rblsh/bj21`, public
+- Settings → Pages → Source: *Deploy from a branch*, branch `main`, folder `/ (root)`
+- `.nojekyll` at the root, so Pages copies the files as they are instead of running Jekyll over them. Without it any path starting with an underscore would be dropped
+- No build step: there is nothing to compile, Pages just serves the folder
 
-## Выкатить новую версию
+Every reference in the project is relative (`css/style.css`, `js/app.js`, `start_url: "."` in the manifest, `scope: "."`), which is why the game works under the `/bj21/` subpath and would work unchanged at the root of a domain.
 
-Одной командой с мака (в VM сети нет, гнать надо из обычного терминала):
-
-```bash
-cd "~/Documents/Coding/Claude Code/bj21"
-../gs-notify/node_modules/.bin/wrangler pages deploy . --project-name=bj21
-```
-
-Либо через панель: Workers & Pages -> bj21 -> Create deployment -> перетащить папку или zip.
-
-**Перед каждой выкаткой поднимать `CACHE` в `sw.js`** (сейчас `bj21-v2`). Service worker ходит network-first, поэтому свежий код подхватится и так, но офлайн-копия обновится только на новом имени кэша.
-
-## Если захочется деплой на пуше, как у rbl-space
-
-Проект прямой загрузки МОЖНО подключить к Git позже, кнопка есть: bj21 -> Settings -> Build -> Git repository -> Connect.
+## Releasing a new version
 
 ```bash
-cd "~/Documents/Coding/Claude Code/bj21"
-gh repo create rblsh/bj21 --private --source=. --remote=origin --push
+git push
 ```
 
-Дальше в панели Connect, ветка `main`, build command пустой, output directory `/`. После этого каждый push выкатывается сам, а домен и настройки остаются на месте.
+Pages rebuilds in under a minute. **Bump `CACHE` in `sw.js` before every release** (currently `bj21-v3`). The service worker is network-first, so fresh code arrives anyway, but the offline copy only refreshes under a new cache name.
 
-## Проверка после выкатки
+## Caching
 
-- Открыть домен, сыграть раздачу, посмотреть консоль
-- На телефоне: «На экран «Домой»» ставит приложение, оно открывается без адресной строки и работает в самолётном режиме
+GitHub Pages sets its own headers and does not read a `_headers` file — it serves everything with a 10-minute `max-age` and an ETag. That is fine here: nothing is content-hashed, and the service worker checks the network first. Should the caching ever matter more, the alternative is a host that honours per-path headers.
+
+## Checks after a release
+
+- Open the page, play a round, look at the console
+- On a phone: "Add to Home Screen" installs it, it opens without an address bar and plays in airplane mode
+- `node test/engine.test.mjs` passes locally before pushing — Pages will happily publish a broken build
+
+## A custom domain, if it ever comes back
+
+Settings → Pages → Custom domain, plus a `CNAME` record pointing at `rblsh.github.io`. GitHub then writes a `CNAME` file into the repository root. Nothing else in the project needs to change.

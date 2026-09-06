@@ -1,79 +1,81 @@
-# bj21 - Blackjack
+# bj21
 
-Блэкджек в браузере. Статика без сборки и зависимостей: HTML, CSS и ES-модули. Ставится на телефон как приложение и играется офлайн.
+Blackjack in the browser. Static: HTML, CSS and ES modules, no build step and no dependencies. Installs on a phone as an app and plays offline.
 
-## Запуск локально
+**Play: https://rblsh.github.io/bj21/**
 
-ES-модули не работают с `file://`, нужен любой статический сервер:
+## Run it locally
+
+ES modules do not load over `file://`, so any static server will do:
 
 ```bash
 cd bj21
 python3 -m http.server 8080
-# открыть http://localhost:8080
+# open http://localhost:8080
 ```
 
-## Правила
+## Rules
 
-- 6 колод, перетасовка при выходе ~75% шуза (cut card)
-- Дилер стоит на всех 17, включая soft 17, и подглядывает под туза и десятку
-- Блэкджек платит 3:2, страховка 2:1
-- Double на любых двух картах, в том числе после сплита
-- Сплит до 4 рук по равному ЗНАЧЕНИЮ карты (K и 10 сплитятся), тузы получают по одной карте
-- 21 на сплит-руке это 21, а не блэкджек
-- Банкролл 1000 фишками 5 / 25 / 100 / 500, хранится в localStorage браузера
+- 6 decks, reshuffled when the cut card at ~75% of the shoe comes out
+- Dealer stands on all 17s, soft 17 included, and peeks under an ace or a ten
+- Blackjack pays 3:2, insurance pays 2:1
+- Double on any two cards, including after a split
+- Split up to 4 hands on equal card VALUE (K and 10 split), aces get one card each
+- 21 on a split hand is 21, not a blackjack
+- Bankroll of 1,000 with 5 / 25 / 100 / 500 chips, kept in the browser's localStorage
 
-## Что есть в интерфейсе
+## What the interface does
 
-- Раздача, переворот и перестроение карт на пружинах, перехватываемых на полпути
-- Фишки нарисованы как настоящие: насечки по краю, номиналы одной тональной шкалой; ставка это стопка, а не цифра, фишки летят в ставку и обратно в банкролл
-- Очки считаются по картам НА СТОЛЕ, поэтому сумма дилера растёт по мере выкладки, а не появляется финальной
-- Светлая и тёмная тема плюс авто; на телефоне переключатель живёт в шторке, где для него есть место
-- Звук синтезом через WebAudio, без единого файла; выключается кнопкой в шапке
-- Статистика сессии: руки, винрейт, блэкджеки, нет, лучший раунд, пик банкролла, оборот, возврат
-- Справка How to play со всеми ходами, выплатами и короткой базовой стратегией
-- Подсказка по базовой стратегии: лампочка в шапке помечает точкой ход, который делает базовая стратегия. Это метка, а не заливка кнопки: hit и stand равноправны, игра ни к чему не подталкивает
-- Клавиши: Space или Enter - раздать и следующая рука, H - hit, S - stand, D - double, P - split, Y и N - страховка, ? - справка, Escape - закрыть шторку
-- Вибрация на телефоне в конце раунда (отключается системной настройкой уменьшения движения)
+- Cards deal, flip and re-layout on springs that can be interrupted mid-flight
+- Chips are drawn like real ones: edge notches, denominations on a single tonal scale. The bet is a stack, not a number, and chips fly into the bet and back into the bankroll
+- Scores are counted from the cards ON THE TABLE, so the dealer's total grows as cards land instead of appearing final
+- Light and dark themes plus auto; on a phone the switch lives in the sheet, where there is room for it
+- Sound is synthesised with WebAudio, not a single audio file; the header button turns it off
+- Session stats: hands, win rate, blackjacks, net, best round, bankroll peak, amount wagered, return
+- A How-to-play sheet with every move, the payouts and a short basic-strategy summary
+- Basic-strategy hint: the bulb in the header marks the move basic strategy would make with a dot. It is a marker, not a filled button — hit and stand are equals and the game nudges toward neither
+- Keys: Space or Enter to deal and to go to the next hand, H hit, S stand, D double, P split, Y and N for insurance, ? for help, Escape to close a sheet
+- Haptics on a phone at the end of a round (off when the system asks for reduced motion)
 
-## Структура
+## Layout
 
 ```
-index.html                разметка
-css/style.css             токены house-ui (светлая и тёмная тема), карты, фишки, шторка
-js/engine.js              чистая логика игры без DOM: шуз, руки, сплит, страховка, расчёт
-js/spring.js              движок пружинной анимации
-js/sound.js               синтез звука через WebAudio
-js/strategy.js            базовая стратегия: подсказка в игре и та же таблица в проверке честности
-js/app.js                 интерфейс: раздача, счёт, ставки, панели, тема, клавиши
-test/engine.test.mjs      тесты движка: node test/engine.test.mjs
-sw.js                     service worker, кэш оболочки network-first
-manifest.webmanifest      манифест PWA
-icons/                    иконки приложения
+index.html                markup
+css/style.css             design tokens (light and dark), cards, chips, sheet
+js/engine.js              pure game logic, no DOM: shoe, hands, split, insurance, settlement
+js/spring.js              spring animation engine
+js/sound.js               WebAudio synthesis
+js/strategy.js            basic strategy: the in-game hint and the same table used in the fairness check
+js/app.js                 UI: dealing, scoring, bets, panels, theme, keys
+test/engine.test.mjs      engine tests: node test/engine.test.mjs
+sw.js                     service worker, network-first shell cache
+manifest.webmanifest      PWA manifest
+icons/                    app icons
 ```
 
-Движок возвращает список событий (`card`, `reveal`, `split`, `focus`, `bet`, `insurance`, `result`, `done`), интерфейс проигрывает их по очереди. Логика тестируется в Node, анимацию можно менять, не трогая правила.
+The engine returns an ordered list of events (`card`, `reveal`, `split`, `focus`, `bet`, `insurance`, `result`, `done`) and the interface replays them one by one. Logic is tested in Node, so the animation can change without touching the rules.
 
-## Честность
+## Fairness
 
-Движок проверен тремя независимыми способами, все скрипты лежат в истории проекта:
+The engine was checked three independent ways:
 
-- 500 000 раздач по базовой стратегии: игрок берёт 43.5% рук, отдаёт 47.9%, 8.6% пуш. Преимущество казино 0.451% против табличных 0.40-0.46% для этих правил
-- Распределение итоговых рук дилера по каждой открытой карте сверено с опубликованными таблицами: расхождение по строкам 2-9 не больше 0.6 пункта на выборках по 150 тысяч, по десятке и тузу совпало до десятых
-- Игра «как дилер» (добор до 17, без дабла и сплита) даёт 5.74% преимущества казино при опубликованных ~5.5%
+- 500,000 hands played by basic strategy: the player takes 43.5% of hands, loses 47.9%, pushes 8.6%. House edge 0.451% against a published 0.40–0.46% for these rules
+- The dealer's final-hand distribution for every upcard was compared with published tables: rows 2–9 differ by no more than 0.6 points on samples of 150,000, and the ten and the ace match to a tenth
+- Playing "like the dealer" (hit to 17, no double, no split) gives a 5.74% house edge against a published ~5.5%
 
-Короткая серия ничего не доказывает: на 30 руках одно стандартное отклонение винрейта это 9 пунктов. Восемь побед из тридцати выпадают примерно раз в двадцать сессий.
+A short session proves nothing either way: over 30 hands one standard deviation of the win rate is 9 points. Eight wins out of thirty comes up about once in twenty sessions.
 
-## Тесты
+## Tests
 
 ```bash
 node test/engine.test.mjs
 ```
 
-Около восьмидесяти проверок: значения рук, все исходы, сплит и респлит до четырёх рук, сплит тузов, double после сплита, страховка во всех трёх исходах, границы банкролла, перетасовка по cut card, статистика, плюс прогон 3000 случайных раундов на инварианты.
+About ninety assertions: hand values, every outcome, split and resplit to four hands, split aces, double after split, insurance in all three outcomes, bankroll limits, the cut-card reshuffle, statistics, plus a 3,000-round random run checking invariants.
 
-## Отладка
+## Debugging
 
-`window.__bj` в консоли отдаёт `game`, `views`, `spots` и `busy()`. Подложить известный шуз:
+`window.__bj` in the console gives you `game`, `views`, `spots` and `busy()`. To stack a known shoe:
 
 ```js
 const g = window.__bj.game;
@@ -82,6 +84,10 @@ g.shoe.push(...['8','9','8','7'].map((r,i)=>({rank:r,suit:'SHDC'[i%4]})).reverse
 g.needsShuffle = false;
 ```
 
-## Публикация
+## Deploying
 
-Репозиторий github.com/rblsh/bj21, поддомен bj21 на основном сайте. Папка целиком статическая: подходит для Cloudflare Pages или GitHub Pages без сборки. При выкатке новой версии поднимать `CACHE` в `sw.js`, иначе у вернувшихся игроков останется старая оболочка.
+See [DEPLOY.md](DEPLOY.md). The site is GitHub Pages from `main` at the repository root; every path in the project is relative, so it works from the `/bj21/` subpath as well as from a domain root.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).
