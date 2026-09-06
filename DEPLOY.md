@@ -1,41 +1,40 @@
-# Выкатка bj21.rblsh.com
+# bj21.rblsh.com
 
-Сайт статический, сборки нет: в прод уезжает папка как есть.
+Игра уже в проде: **https://bj21.rblsh.com** (он же https://bj21.pages.dev).
 
-## Что уже сделано
+## Как это устроено сейчас
 
-- Локальный репозиторий инициализирован, первый коммит на месте
-- `_headers` задаёт кэш: оболочка (`index.html`, `sw.js`, манифест) без кэша, ассеты на час, иконки на неделю
+- Cloudflare Pages, проект `bj21` в аккаунте Rbl@mediacube.io, режим **прямой загрузки** (не из Git)
+- Домен `bj21.rblsh.com` добавлен кастомным доменом, CNAME на `bj21.pages.dev` создан автоматически, зона та же
+- Приложения Cloudflare Access на поддомене нет: игра открывается без входа
+- `_headers` задаёт кэш: `index.html`, `sw.js` и манифест без кэша, `js` и `css` на час, иконки на неделю. Проверено в проде заголовками ответа
+- Локальный git-репозиторий инициализирован, первый коммит на месте, удалёнки нет
 
-## Вариант 1: через GitHub, деплой на пуше (как у rbl-space)
+## Выкатить новую версию
 
-```bash
-cd "~/Documents/Coding/Claude Code/bj21"
-gh repo create rblsh/bj21 --private --source=. --remote=origin --push
-# или руками: создать пустой репозиторий rblsh/bj21 на github.com, затем
-# git remote add origin git@github.com:rblsh/bj21.git && git push -u origin main
-```
-
-Дальше в Cloudflare: Workers & Pages -> Create -> Pages -> Connect to Git -> репозиторий `bj21`.
-Build command оставить пустым, output directory `/`. После первой сборки: Custom domains -> Set up a custom domain -> `bj21.rblsh.com` (зона `rblsh.com` уже в этом аккаунте, CNAME создастся сам).
-
-Дальше каждый push в main выкатывается сам.
-
-## Вариант 2: прямая загрузка одной командой
+Одной командой с мака (в VM сети нет, гнать надо из обычного терминала):
 
 ```bash
 cd "~/Documents/Coding/Claude Code/bj21"
 ../gs-notify/node_modules/.bin/wrangler pages deploy . --project-name=bj21
 ```
 
-Первый запуск создаст проект. Домен всё равно добавляется в панели один раз.
+Либо через панель: Workers & Pages -> bj21 -> Create deployment -> перетащить папку или zip.
 
-## При каждой следующей выкатке
+**Перед каждой выкаткой поднимать `CACHE` в `sw.js`** (сейчас `bj21-v2`). Service worker ходит network-first, поэтому свежий код подхватится и так, но офлайн-копия обновится только на новом имени кэша.
 
-Поднимать `CACHE` в `sw.js` (сейчас `bj21-v2`). Иначе у тех, кто уже открывал игру, останется старая оболочка: service worker ходит network-first, но офлайн-копия обновится только на новом имени кэша.
+## Если захочется деплой на пуше, как у rbl-space
+
+Проект прямой загрузки МОЖНО подключить к Git позже, кнопка есть: bj21 -> Settings -> Build -> Git repository -> Connect.
+
+```bash
+cd "~/Documents/Coding/Claude Code/bj21"
+gh repo create rblsh/bj21 --private --source=. --remote=origin --push
+```
+
+Дальше в панели Connect, ветка `main`, build command пустой, output directory `/`. После этого каждый push выкатывается сам, а домен и настройки остаются на месте.
 
 ## Проверка после выкатки
 
-- Открыть https://bj21.rblsh.com, сыграть раздачу, посмотреть консоль
-- Убедиться, что на поддомен НЕ распространяется приложение Cloudflare Access: игра публичная, входа быть не должно
+- Открыть домен, сыграть раздачу, посмотреть консоль
 - На телефоне: «На экран «Домой»» ставит приложение, оно открывается без адресной строки и работает в самолётном режиме
