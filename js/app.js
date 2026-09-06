@@ -341,6 +341,10 @@ function hideResult() { resAlpha.set(0); resScale.set(.9); }
 // a filled button reads as "the game wants this", and hit and stand are equals.
 let hintOn = store.get('bj.hint', false);
 const HINT_BTN = { hit: 'btnHit', stand: 'btnStand', double: 'btnDouble', split: 'btnSplit' };
+// what the button says without its key cap: "Insure 25", not "Insure 25 1"
+const btnLabel = b => [...b.childNodes]
+  .filter(n => n.nodeType === 3 || (n.nodeType === 1 && n.tagName !== 'KBD' && !n.classList.contains('tip')))
+  .map(n => n.textContent).join(' ').replace(/\s+/g, ' ').trim();
 function clearHints() {
   for (const el of document.querySelectorAll('.btn .tip')) el.remove();
   for (const el of document.querySelectorAll('.btn[data-hint]')) {
@@ -360,7 +364,7 @@ function renderHint() {
   dot.className = 'tip';
   b.appendChild(dot);
   b.dataset.hint = '1';
-  b.setAttribute('aria-label', b.textContent.trim().replace(/\s+/g, ' ') + ', recommended by basic strategy');
+  b.setAttribute('aria-label', btnLabel(b) + ', recommended by basic strategy');
 }
 
 function renderControls() {
@@ -665,23 +669,34 @@ async function doNext() {
   renderBet(false);
   await wait(260);
 }
+// The bankroll can be put back at any time: from the broke screen, from the R key
+// and from the session sheet. All three ask twice, and all three land here.
+const RESET_LABEL = 'Reset bankroll <kbd>R</kbd>';
 let resetArmed = false, resetT = null;
-function doReset() {
-  if (!resetArmed) {
-    resetArmed = true;
-    els.btnReset.textContent = 'Tap again to reset';
-    clearTimeout(resetT);
-    resetT = setTimeout(() => { resetArmed = false; els.btnReset.textContent = 'Reset bankroll'; }, 3000);
-    return;
-  }
+function disarmReset() {
   clearTimeout(resetT); resetArmed = false;
-  els.btnReset.textContent = 'Reset bankroll';
+  els.btnReset.innerHTML = RESET_LABEL;
+}
+function armReset() {
+  resetArmed = true;
+  els.btnReset.innerHTML = 'Press again to reset <kbd>R</kbd>';
+  // on the broke screen the button says it itself; anywhere else the toast is the only word
+  if (els.uiBroke.hidden) toast('Press R again to reset the bankroll to ' + fmt(game.rules.startBankroll), 3000);
+  clearTimeout(resetT);
+  resetT = setTimeout(disarmReset, 3000);
+}
+function resetBankroll() {
   game.resetBankroll();
   clearTable(); clearSpots(); addSpot(0);
   hideResult(); sizeSpacers();
   renderBank(); renderBet(false); renderControls();
   persist();
   toast('Bankroll reset to ' + fmt(game.rules.startBankroll));
+}
+function doReset() {
+  if (!resetArmed) { armReset(); return; }
+  disarmReset();
+  resetBankroll();
 }
 
 // ---------- sheets ----------
@@ -725,7 +740,7 @@ const HELP_HTML = `
 <p class="lede">Beat the dealer without going over 21. Face cards count 10; an ace counts 11 or 1, whichever helps you.</p>
 <h3>A round</h3>
 <ol>
-  <li>Put out a bet with the chips, then press Deal.</li>
+  <li>Put out a bet with the chips, then press Deal. On a keyboard the digits 1 to 4 are the chips.</li>
   <li>You get two cards face up. The dealer gets one up, one down.</li>
   <li>Draw as many cards as you like, or stop while you are under 21.</li>
   <li>The dealer then draws to 17 and stands there, soft 17 included.</li>
@@ -733,13 +748,30 @@ const HELP_HTML = `
 </ol>
 <h3>Your moves</h3>
 <dl class="moves">
-  <dt>Bet <kbd>X</kbd> <kbd>M</kbd></dt><dd>Chips add to the bet; ×2 doubles it and Max puts the whole bankroll out.</dd>
-  <dt>Hit <kbd>H</kbd></dt><dd>Take one more card.</dd>
-  <dt>Stand <kbd>S</kbd></dt><dd>Keep what you have and pass to the dealer.</dd>
-  <dt>Double <kbd>D</kbd></dt><dd>Double the bet, take exactly one card, then stand. First two cards only, after a split as well.</dd>
-  <dt>Split <kbd>P</kbd></dt><dd>Two cards of the same value become two hands, each with its own bet. Up to four hands. Split aces get one card each.</dd>
-  <dt>Insurance <kbd>Y</kbd> <kbd>N</kbd></dt><dd>Offered when the dealer shows an ace. Costs half your bet, pays 2:1 if the dealer has blackjack. It loses money over time, so most players say no.</dd>
+  <dt>Bet</dt><dd>Chips add to the bet; Clear takes it back, ×2 doubles it and Max puts the whole bankroll out.</dd>
+  <dt>Hit</dt><dd>Take one more card.</dd>
+  <dt>Stand</dt><dd>Keep what you have and pass to the dealer.</dd>
+  <dt>Double</dt><dd>Double the bet, take exactly one card, then stand. First two cards only, after a split as well.</dd>
+  <dt>Split</dt><dd>Two cards of the same value become two hands, each with its own bet. Up to four hands. Split aces get one card each.</dd>
+  <dt>Insurance</dt><dd>Offered when the dealer shows an ace. Costs half your bet, pays 2:1 if the dealer has blackjack. It loses money over time, so most players say no.</dd>
 </dl>
+<div class="keysec">
+<h3>Keyboard</h3>
+<p>Every control has a key, and <b>1 2 3 4</b> always mean the four buttons of the row on screen. Each button carries its own cap, so the row tells you what the digits do right now.</p>
+<dl class="moves">
+  <dt><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd></dt><dd>The row in front of you: the four chips while you bet, then Hit, Stand, Double, Split, and Insure or No insurance when insurance is offered.</dd>
+  <dt><kbd>Space</kbd></dt><dd>Deal, and next hand once the round is settled. Enter does the same.</dd>
+  <dt><kbd>↑</kbd><kbd>↓</kbd></dt><dd>Put out the smallest chip, or take it back off.</dd>
+  <dt><kbd>←</kbd><kbd>→</kbd></dt><dd>The same with the largest chip.</dd>
+  <dt><kbd>C</kbd></dt><dd>Clear the bet. Backspace does it too.</dd>
+  <dt><kbd>X</kbd><kbd>M</kbd></dt><dd>Double the bet, or put the whole bankroll out.</dd>
+  <dt><kbd>R</kbd></dt><dd>Reset the bankroll, twice to confirm. Between rounds only.</dd>
+  <dt><kbd>T</kbd><kbd>A</kbd><kbd>G</kbd></dt><dd>Theme, sound, strategy hint.</dd>
+  <dt><kbd>I</kbd><kbd>?</kbd></dt><dd>This session, and this page.</dd>
+  <dt><kbd>Esc</kbd></dt><dd>Close a sheet.</dd>
+</dl>
+<p class="fine">H, S, D, P and Y, N still work for hit, stand, double, split and insurance.</p>
+</div>
 <h3>The hint</h3>
 <p>The bulb in the header marks the move basic strategy would make - the play with the best long-run return for the cards on the table. It is a mark, not an instruction: hit and stand are equal choices and the game never pushes you toward either.</p>
 <h3>Payouts</h3>
@@ -790,23 +822,36 @@ function statsHtml() {
   <p>Short sessions swing hard. Over 30 hands the win rate lands anywhere from 34% to 62% about two thirds of the time,
   so a run of 8 wins in 30 is unremarkable - it happens about once every twenty sessions. The numbers above only start
   meaning something after a few hundred hands.</p>
-  <button type="button" class="btn quiet danger" id="btnResetStats">Reset statistics</button>`;
+  <div class="sheet-actions">
+    <button type="button" class="btn quiet danger" id="btnResetBank">Reset bankroll</button>
+    <button type="button" class="btn quiet danger" id="btnResetStats">Reset statistics</button>
+  </div>`;
 }
-function bindStatsReset() {
-  const b = $('btnResetStats');
+// both buttons ask twice: one tap arms, the second one does it
+function armedButton(id, label, armedLabel, run) {
+  const b = $(id);
   if (!b) return;
   let armed = false, t = null;
   b.addEventListener('click', () => {
     if (!armed) {
-      armed = true; b.textContent = 'Tap again to clear';
-      clearTimeout(t); t = setTimeout(() => { armed = false; b.textContent = 'Reset statistics'; }, 3000);
+      armed = true; b.textContent = armedLabel;
+      clearTimeout(t); t = setTimeout(() => { armed = false; b.textContent = label; }, 3000);
       return;
     }
-    clearTimeout(t);
+    clearTimeout(t); armed = false; b.textContent = label;
+    run();
+  });
+}
+function bindStatsReset() {
+  armedButton('btnResetStats', 'Reset statistics', 'Tap again to clear', () => {
     game.resetStats(); persist();
     els.sheetBody.innerHTML = statsHtml();
     bindStatsReset();
     toast('Statistics cleared');
+  });
+  armedButton('btnResetBank', 'Reset bankroll', 'Tap again to reset', () => {
+    if (game.phase !== 'betting') { toast('Finish the round first'); return; }
+    resetBankroll();
   });
 }
 // The theme switch exists in ONE place at a time: on a phone the header has no
@@ -854,34 +899,95 @@ els.btnStats.addEventListener('click', openStats);
 els.sheetClose.addEventListener('click', closeSheet);
 els.scrim.addEventListener('click', closeSheet);
 
+// ---------- keyboard ----------
+// One rule holds the whole layout together: 1 2 3 4 are the four buttons of the
+// row that is on screen right now. The row changes with the phase, the digits do
+// not, and every button carries its own key cap, so nothing has to be memorised.
+// Everything that is not a game move sits on a letter or an arrow.
+function rowButtons() {
+  switch (game.phase) {
+    case 'betting':   return els.uiBroke.hidden ? chipBtns : [els.btnReset];
+    case 'player':    return [els.btnHit, els.btnStand, els.btnDouble, els.btnSplit];
+    case 'insurance': return [els.btnInsYes, els.btnInsNo];
+    case 'settled':   return [els.btnNext];
+    default:          return [];
+  }
+}
+// a key does exactly what a finger does, down to the press feedback
+function press(el) {
+  if (!el || el.disabled || el.offsetParent === null) return false;
+  el.classList.add('pressed');
+  setTimeout(() => el.classList.remove('pressed'), 130);
+  el.click();
+  return true;
+}
+// arrows move the bet by a chip: up and down by the smallest, left and right by the largest
+function stepBet(i, dir) {
+  if (game.phase !== 'betting') return;
+  if (dir > 0) { press(chipBtns[i]); return; }
+  if (game.removeBet(CHIPS[i])) { sound.click(); renderBet(true); renderControls(); }
+}
+function cycleTheme() {
+  const i = themeBtns.findIndex(b => b.dataset.mode === themeMode());
+  const n = themeBtns[(i + 1) % themeBtns.length];
+  applyTheme(n.dataset.mode, true);
+  sound.click();
+  toast('Theme: ' + n.dataset.mode);
+}
+
 document.addEventListener('keydown', e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (k === 'escape' && sheetOpen) { e.preventDefault(); closeSheet(); return; }
   if (sheetOpen) return;
-  if (e.key === '?') { e.preventDefault(); openHelp(); return; }
+
+  // panels and switches answer from any phase
+  if (e.key === '?' || e.key === '/') { e.preventDefault(); openHelp(); return; }
+  if (k === 'i') { e.preventDefault(); openStats(); return; }
+  if (k === 't') { e.preventDefault(); cycleTheme(); return; }
+  if (k === 'a') { e.preventDefault(); els.btnSound.click(); return; }
+  if (k === 'g') { e.preventDefault(); els.btnHint.click(); return; }
+
   if (k === ' ' || k === 'enter') {
+    // a focused button already answers the space bar itself
     if (document.activeElement && document.activeElement.tagName === 'BUTTON') return;
     e.preventDefault();
-    if (game.phase === 'betting') run(doDeal); else if (game.phase === 'settled') run(doNext);
+    if (game.phase === 'betting') press(els.uiBroke.hidden ? els.btnDeal : els.btnReset);
+    else if (game.phase === 'settled') press(els.btnNext);
     return;
   }
   if (busy) return;
+
+  const row = rowButtons();
+  if (k >= '1' && k <= '4' && row[+k - 1]) { e.preventDefault(); press(row[+k - 1]); return; }
+
   if (game.phase === 'betting') {
-    if (k === 'x' && game.canDoubleBet()) { game.doubleBet(); sound.chips(2); renderBet(true); renderControls(); }
-    if (k === 'm' && game.canMaxBet()) { game.maxBet(); sound.chips(4); renderBet(true); renderControls(); }
+    if (k === 'c' || k === 'backspace' || k === 'delete') { e.preventDefault(); press(els.btnClear); return; }
+    if (k === 'x') { press(els.btnX2); return; }
+    if (k === 'm') { press(els.btnMax); return; }
+    if (k === 'r') { e.preventDefault(); doReset(); return; }
+    // the theme switch owns the arrows while it has focus
+    const inSeg = document.activeElement && document.activeElement.closest && document.activeElement.closest('#themeSeg');
+    if (!inSeg && k.startsWith('arrow')) {
+      e.preventDefault();
+      if (k === 'arrowup') stepBet(0, 1);
+      else if (k === 'arrowdown') stepBet(0, -1);
+      else if (k === 'arrowright') stepBet(CHIPS.length - 1, 1);
+      else if (k === 'arrowleft') stepBet(CHIPS.length - 1, -1);
+    }
     return;
   }
   if (game.phase === 'insurance') {
-    if (k === 'y' && game.canInsure()) run(() => playEvents(game.takeInsurance(true)));
-    if (k === 'n') run(() => playEvents(game.takeInsurance(false)));
+    if (k === 'y') press(els.btnInsYes);
+    if (k === 'n') press(els.btnInsNo);
     return;
   }
   if (game.phase !== 'player') return;
-  if (k === 'h') run(() => playEvents(game.hit()));
-  if (k === 's') run(() => playEvents(game.stand()));
-  if (k === 'd' && game.canDouble()) run(() => playEvents(game.double()));
-  if (k === 'p' && game.canSplit()) run(() => playEvents(game.split()));
+  // the old letters keep working next to the digits
+  if (k === 'h') press(els.btnHit);
+  if (k === 's') press(els.btnStand);
+  if (k === 'd') press(els.btnDouble);
+  if (k === 'p') press(els.btnSplit);
 });
 
 document.addEventListener('pointerdown', e => {

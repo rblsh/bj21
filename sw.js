@@ -1,6 +1,6 @@
 // Cache the shell so the game opens offline. Bump CACHE on every release:
 // the old cache is dropped on activate, so a stale build cannot survive.
-const CACHE = 'bj21-v4';
+const CACHE = 'bj21-v5';
 const SHELL = [
   '.', 'index.html', 'css/style.css',
   'js/app.js', 'js/engine.js', 'js/spring.js', 'js/sound.js', 'js/strategy.js',

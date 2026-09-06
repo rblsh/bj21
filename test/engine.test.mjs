@@ -316,6 +316,18 @@ eq(createShoe(6, () => 0.5).length, 312, '6 decks = 312 cards');
   const g = new Game({ bankroll: 3 });
   eq(g.canMaxBet(), false, 'no max below the table minimum');
 }
+{ // chips come off the bet one at a time, and never below zero
+  const g = new Game({ bankroll: 1000 });
+  g.addBet(500); g.addBet(25);
+  eq(g.removeBet(25) && g.bet, 500, 'a chip comes back off the bet');
+  eq(g.removeBet(5000) && g.bet, 0, 'removing more than is out clears the bet');
+  eq(g.canRemoveBet(5), false, 'nothing to take back off an empty spot');
+}
+{
+  const g = rigged([C('10'), C('6'), C('8'), C('A')]);
+  g.addBet(25); g.deal();
+  eq(g.removeBet(5), false, 'no chip comes off mid-hand');
+}
 {
   const g = rigged([C('10'), C('6'), C('8'), C('A')]);
   g.addBet(25); g.deal();

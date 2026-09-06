@@ -22,7 +22,7 @@ python3 -m http.server 8080
 - Double on any two cards, including after a split
 - Split up to 4 hands on equal card VALUE (K and 10 split), aces get one card each
 - 21 on a split hand is 21, not a blackjack
-- Bankroll of 3,000, kept in the browser's localStorage. The four chips start at 5 / 25 / 100 / 500 and their face value climbs with the bankroll, so a billion is still bet in a few taps
+- Bankroll of 3,000, kept in the browser's localStorage, and resettable at any time from the session sheet or with `R`. The four chips start at 5 / 25 / 100 / 500 and their face value climbs with the bankroll, so a billion is still bet in a few taps
 
 ## What the interface does
 
@@ -35,7 +35,7 @@ python3 -m http.server 8080
 - Session stats: hands, win rate, blackjacks, net, best round, bankroll peak, amount wagered, return
 - A How-to-play sheet with every move, the payouts and a short basic-strategy summary
 - Basic-strategy hint: the bulb in the header marks the move basic strategy would make with a dot. It is a marker, not a filled button — hit and stand are equals and the game nudges toward neither
-- Keys: Space or Enter to deal and to go to the next hand, H hit, S stand, D double, P split, Y and N for insurance, ? for help, Escape to close a sheet
+- Every control has a key. `1` `2` `3` `4` are the four buttons of the row on screen: the chips while you bet, then hit, stand, double, split, and insure or decline when insurance is offered. Space deals and moves to the next hand, arrows put a chip out or take it back, `C` clears the bet, `X` doubles it, `M` bets it all, `R` resets the bankroll, `T` `A` `G` switch theme, sound and the hint, `I` opens the session, `?` this help, Escape closes a sheet. The old letters (`H` `S` `D` `P`, `Y` `N`) still work
 - Haptics on a phone at the end of a round (off when the system asks for reduced motion)
 - Money reads in full up to a million and takes a suffix past it: 1.25M, 12.35B, 4.2T and on up to Dc
 

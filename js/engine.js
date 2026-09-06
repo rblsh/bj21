@@ -128,6 +128,10 @@ export class Game {
   canBet(amount) { return this.phase === 'betting' && amount > 0 && this.bet + amount <= this.bankroll; }
   addBet(amount) { if (!this.canBet(amount)) return false; this.bet += amount; return true; }
   clearBet() { if (this.phase !== 'betting') return false; this.bet = 0; return true; }
+  // taking a chip back off the table: the bet never goes below zero, and a chip
+  // larger than what is out simply clears it
+  canRemoveBet(amount) { return this.phase === 'betting' && this.bet > 0 && amount > 0; }
+  removeBet(amount) { if (!this.canRemoveBet(amount)) return false; this.bet = Math.max(0, this.bet - amount); return true; }
   canDoubleBet() { return this.phase === 'betting' && this.bet > 0 && this.bet * 2 <= this.bankroll; }
   doubleBet() { if (!this.canDoubleBet()) return false; this.bet *= 2; return true; }
   // the whole bankroll, rounded down to something the chips can actually make:
