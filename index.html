@@ -16,7 +16,6 @@
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <script>
   // theme before the first paint, so the page never flashes light
-  alert('Алина, выходи отсюда');
   (function(){try{var t=localStorage.getItem('bj.theme');t=t?JSON.parse(t):'auto';
     var d=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.setAttribute('data-theme',d?'dark':'light');
